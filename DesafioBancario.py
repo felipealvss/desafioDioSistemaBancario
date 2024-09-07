@@ -1,3 +1,4 @@
+import re
 from datetime import datetime
 
 print("------------------------------------------------------------")
@@ -16,23 +17,69 @@ print("------------------------------------------------------------")
 saldo_total = 0.00;
 saque_diario = 3;
 limite_saque = 500.00;
-id_acao = 0
-audit = []
+id_acao = 0;
+audit = [];
+id_agencia = 1;
+agencia = f"{id_agencia:04}";
+id_usuario = 0;
+lista_usuario = [];
+id_conta_corrente = 1;
+lista_conta_corrente = [];
 
 
 
 # Funcoes
-def deposito(valor):
+def criar_usuario(nome_usuario, data_nasc, cpf_cnpj, endereco):
+    global id_usuario
+    global lista_usuario
+
+    aj_cpf_cnpj = re.sub(r'\D', '', cpf_cnpj)
+
+    for l in lista_usuario:
+        if l['cpf_cnpj'] == cpf_cnpj:
+            return -1
+        else:
+            id_user = id_usuario
+
+            lista_usuario.append({
+                "id": id_user,
+                "nome_usuario": nome_usuario,
+                "data_nascimento": data_nasc,
+                "cpf_cnpj": aj_cpf_cnpj,
+                "endereco": endereco
+            })
+            
+            id_usuario += 1
+
+            return id_user
+
+def criar_conta_corrente(agencia, usuario):
+    
+    id_current_account = id_conta_corrente
+    
+    lista_conta_corrente.append({
+        "numero_conta": id_current_account,
+        "agencia": agencia,
+        "nome_usuario": usuario
+    })
+
+    id_conta_corrente += 1
+
+    return id_current_account
+
+def deposito(id_, valor):
     
     global saldo_total
     global audit
     global id_acao
+    global lista_usuario
 
     acao = 'DEPOSITO'
     saldo_total += valor
     id_acao += 1
 
     audit.append({
+            'usuario': lista_usuario[id_]['nome_usuario'],
             'id': id_acao,
             'acao': acao,
             'valor': valor,
@@ -41,13 +88,14 @@ def deposito(valor):
 
     return acao, saldo_total
 
-def saque(valor):
+def saque(id_, valor):
     
     global saldo_total
     global saque_diario
     global limite_saque
     global id_acao
     global audit
+    global lista_usuario
 
     acao = 'SAQUE'
     acao_fail = -1
@@ -67,6 +115,7 @@ def saque(valor):
         id_acao += 1
 
         audit.append({
+            'usuario': lista_usuario[id_]['nome_usuario'],
             'id': id_acao,
             'acao': acao,
             'valor': valor,
@@ -77,7 +126,7 @@ def saque(valor):
     else:
         return acao_fail, -1
 
-def extrato(audit):
+def extrato(id_, audit):
     data_geracao = datetime.now()
     data_geracao = data_geracao.strftime('%d/%m/%Y %H:%M:%S')
 
@@ -85,6 +134,7 @@ def extrato(audit):
     print('---------     Extrato bancário:     ---------')
     print("")
     print(f"Data/Hora extrato: {data_geracao}")
+    print(f'Usuário: {lista_usuario[id_]['nome_usuario']}')
     print("")
 
     for a in audit:
@@ -109,12 +159,50 @@ def opcoes():
     print('  4 - Encerrar')
     print("")
 
+
+
 # Programa principal
 print("")
 print("=======================================================")
 print("              SISTEMA BANCÁRIO TESTE D.I.O             ")
 print("=======================================================")
 print("")
+
+print(f'Olá, querido(a) cliente!\nPara seguirmos, preciso que faça o cadastro a seguir:\n')
+
+nome = input("Informe seu nome: ")
+dt_nasc = input("Informe sua data de nascimento (Exemplo: 01/01/2001): ")
+cpf = input("Informe seu CPF: ")
+
+print("Agora preciso de dados de localização.\n(Logradouro - Nr. da residência - Bairro - Cidade - Sigla de estado)\n")
+
+logradouro = input("Informe seu logradouro: ")
+nro_residencia = input("Informe seu nr. da residência: ")
+bairro = input("Informe seu bairro: ")
+cidade = input("Informe sua cidade: ")
+sigla_estado = input("Informe a sigla do seu estado: ")
+
+endereco = f'{logradouro} - {nro_residencia} - {bairro} - {cidade} - {sigla_estado}'
+
+print('\nEnviando dados para cadastro...')
+
+while True:
+    try:
+        ret_cadastro = criar_usuario(nome_usuario=nome, data_nasc=dt_nasc, cpf_cnpj=cpf, endereco=endereco)
+        
+        if ret_cadastro != -1:
+            break
+        else:
+            n_cpf = input('CPF já cadastrado. Insira um documento válido: ')
+            cpf = n_cpf
+    except:
+        n_cpf = input('CPF já cadastrado. Insira um documento válido: ')
+        cpf = n_cpf
+
+nome_completo = nome.split()
+
+print(f'\nCadastro realizado, {nome_completo[0]}!')
+print(f'\nSeguem abaixo as opções disponíveis.')
 
 while True:
 
@@ -135,7 +223,7 @@ while True:
         print('\nOperação selecionada: Depósito')
         valor_operacao = float(input("Informe o valor R$ para depositar: R$ "))
         
-        resultado = deposito(valor_operacao)
+        resultado = deposito(ret_cadastro, valor_operacao)
         
         print(f'\nOperação realizada.\nValor de depósito realizado: {resultado[1]:.2f}')
         print('')
@@ -150,7 +238,7 @@ while True:
         print('\nOperação selecionada: Saque')
         valor_operacao = float(input("Informe o valor R$ para sacar: R$ "))
 
-        resultado = saque(valor_operacao)
+        resultado = saque(id_=ret_cadastro, valor=valor_operacao)
         
         if resultado[0] == -1:
             print(resultado[1])
@@ -166,7 +254,7 @@ while True:
         else:
             break
     elif opcao == 3: # Extrato
-        extrato(audit)
+        extrato(ret_cadastro, audit)
         print('')
         continuar = input('Continuar? [S/N]: ')
         
