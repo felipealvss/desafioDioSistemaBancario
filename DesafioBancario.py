@@ -1,3 +1,5 @@
+from datetime import datetime
+
 print("------------------------------------------------------------")
 print('|    Desafio: Criando um sistema bancário                  |')
 print("|                                                          |")
@@ -76,9 +78,13 @@ def saque(valor):
         return acao_fail, -1
 
 def extrato(audit):
+    data_geracao = datetime.now()
+    data_geracao = data_geracao.strftime('%d/%m/%Y %H:%M:%S')
 
     print("-" * 45)
     print('---------     Extrato bancário:     ---------')
+    print("")
+    print(f"Data/Hora extrato: {data_geracao}")
     print("")
 
     for a in audit:
