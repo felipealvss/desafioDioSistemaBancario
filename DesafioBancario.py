@@ -12,7 +12,6 @@ print("|    LinkedIn: https://www.linkedin.com/in/felipealvss/    |")
 print("------------------------------------------------------------")
 
 
-
 # Parametros iniciais
 saldo_total = 0.00;
 saque_diario = 3;
@@ -27,33 +26,47 @@ id_conta_corrente = 1;
 lista_conta_corrente = [];
 
 
-
 # Funcoes
+import re
+
 def criar_usuario(nome_usuario, data_nasc, cpf_cnpj, endereco):
     global id_usuario
     global lista_usuario
 
     aj_cpf_cnpj = re.sub(r'\D', '', cpf_cnpj)
 
+    # Verificar se o CPF já está cadastrado
     for l in lista_usuario:
-        if l['cpf_cnpj'] == cpf_cnpj:
+        if l['cpf_cnpj'] == aj_cpf_cnpj:
             return -1
-        else:
-            id_user = id_usuario
 
-            lista_usuario.append({
-                "id": id_user,
-                "nome_usuario": nome_usuario,
-                "data_nascimento": data_nasc,
-                "cpf_cnpj": aj_cpf_cnpj,
-                "endereco": endereco
-            })
-            
-            id_usuario += 1
+    # Se o CPF não estiver na lista, adicionar o novo usuário
+    id_user = id_usuario
 
-            return id_user
+    novo_usuario = {
+        "id": id_usuario,
+        "nome_usuario": nome_usuario,
+        "data_nascimento": data_nasc,
+        "cpf_cnpj": aj_cpf_cnpj,
+        "endereco": endereco
+    }
+    
+    lista_usuario.append(novo_usuario)
+    id_usuario += 1
+
+    return id_user, nome_usuario
+
+def exibir_cadastros(lista_usuario):
+    for l in lista_usuario:
+        print(f"ID {l['id']} - Usuario: {l['nome_usuario']} - CPF: {l['cpf_cnpj']}")
+
+def exibir_conta_corrente(lista_conta_corrente):
+    for l in lista_conta_corrente:
+        print(f"Conta: {l['numero_conta']} - Agencia: {agencia} - Usuario: {l['nome_usuario']}")
 
 def criar_conta_corrente(agencia, usuario):
+    global id_conta_corrente
+    global lista_conta_corrente
     
     id_current_account = id_conta_corrente
     
@@ -67,7 +80,7 @@ def criar_conta_corrente(agencia, usuario):
 
     return id_current_account
 
-def deposito(id_, valor):
+def deposito(id_, valor, /):
     
     global saldo_total
     global audit
@@ -135,6 +148,7 @@ def extrato(id_, audit):
     print("")
     print(f"Data/Hora extrato: {data_geracao}")
     print(f'Usuário: {lista_usuario[id_]['nome_usuario']}')
+    print(f'Agencia: {agencia}')
     print("")
 
     for a in audit:
@@ -148,7 +162,7 @@ def extrato(id_, audit):
     print("-" * 45)
 
 def final():
-    print('Fim de execução. Até a próxima!')
+    print('\nFim de execução. Até a próxima!')
 
 def opcoes():
     print("")
@@ -190,7 +204,7 @@ while True:
     try:
         ret_cadastro = criar_usuario(nome_usuario=nome, data_nasc=dt_nasc, cpf_cnpj=cpf, endereco=endereco)
         
-        if ret_cadastro != -1:
+        if ret_cadastro[0] != -1:
             break
         else:
             n_cpf = input('CPF já cadastrado. Insira um documento válido: ')
@@ -202,6 +216,18 @@ while True:
 nome_completo = nome.split()
 
 print(f'\nCadastro realizado, {nome_completo[0]}!')
+print("=======================================================")
+print(f'Para realizar transações, preciso que vincule seu cadastro a uma conta corrente.')
+
+print(f'\nSelecionar um ID de usuário para associar a conta corrente: ')
+exibir_cadastros(lista_usuario=lista_usuario)
+
+selecionar_conta = input('Informar ID: ')
+
+criar_conta_corrente(1, ret_cadastro[1])
+print(f'\nConta corrente criada com sucesso.')
+exibir_conta_corrente(lista_conta_corrente=lista_conta_corrente)
+print("=======================================================")
 print(f'\nSeguem abaixo as opções disponíveis.')
 
 while True:
@@ -254,7 +280,7 @@ while True:
         else:
             break
     elif opcao == 3: # Extrato
-        extrato(ret_cadastro, audit)
+        extrato(ret_cadastro[0], audit)
         print('')
         continuar = input('Continuar? [S/N]: ')
         
